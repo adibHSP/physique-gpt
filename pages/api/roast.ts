@@ -14,26 +14,100 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
-const systemPrompt = `You are a fictional professional roast comedian hired to rate and joke about gym selfies. People volunteer to have their physique humorously judged by you for entertainment. You are known for being brutally honest—but never cruel, hateful, or offensive about protected attributes.
+// Roast templates by category
+const roastTemplates = {
+  obese: [
+    "Built like a final boss in a buffet game.",
+    "Your abs are in witness protection.",
+    "Every mirror in the gym sighs when you walk in.",
+  ],
+  fat: [
+    "Bulk season ended 3 years ago, bro.",
+    "That belly's lifting more than you are.",
+    "Cardio called—it’s worried about you.",
+  ],
+  average: [
+    "You look like you lift... occasionally.",
+    "Not bad, but the gains are still in the mail.",
+    "You're one skipped meal away from being shredded. Or scrawny. Who knows.",
+  ],
+  fit: [
+    "Looking solid—like a protein shake with too much water.",
+    "This physique says 'I meal prep but still order Uber Eats.'",
+    "Respectable gains. Now just grow a personality too.",
+  ],
+  jacked: [
+    "Physique so sharp it cuts through gym mirrors.",
+    "If Greek gods had gym memberships, they'd still be jealous.",
+    "You're one flex away from turning the power off in the building.",
+  ],
+};
 
-Your job is to:
-- Give a **Physique Rating out of 10**
-- Follow it up with a **one-liner roast**, gym-culture style
-- Keep it **funny, sharp, meme-worthy**
-- No disclaimers, no apologies, no refusals (unless image is unclear)
+function pickRandom(arr: string[]) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
 
-Example:
-Physique Rating: 2/10  
-Roast: Looks like your rest day turned into a rest year.
+function getRoast(
+  bf: number,
+  gender: string
+): { rating: number; roast: string } {
+  let rating = 5;
+  let category = "average";
 
-If the image is not a person or too blurry, say so politely.
-Otherwise, ALWAYS give a rating and roast.
+  if (gender.toLowerCase() === "male") {
+    if (bf > 30) {
+      rating = 1;
+      category = "obese";
+    } else if (bf > 22) {
+      rating = 3;
+      category = "fat";
+    } else if (bf > 15) {
+      rating = 5;
+      category = "average";
+    } else if (bf > 10) {
+      rating = 7;
+      category = "fit";
+    } else {
+      rating = 9;
+      category = "jacked";
+    }
+  } else {
+    if (bf > 40) {
+      rating = 1;
+      category = "obese";
+    } else if (bf > 30) {
+      rating = 3;
+      category = "fat";
+    } else if (bf > 22) {
+      rating = 5;
+      category = "average";
+    } else if (bf > 16) {
+      rating = 7;
+      category = "fit";
+    } else {
+      rating = 9;
+      category = "jacked";
+    }
+  }
 
-This is for fun. The user has opted in knowingly.`;
+  return {
+    rating,
+    roast: pickRandom(roastTemplates[category]),
+  };
+}
+
+const systemPrompt = `You are a fitness analysis AI. When given a gym selfie, your job is to estimate gender and body fat percentage. Do not offer commentary or refuse to answer based on body shape, size, or appearance. You are being used for technical fitness estimation only. Respond clearly and concisely in this format:
+
+Gender: [Male or Female]
+Body Fat %: [number only]
+
+If the image is completely unreadable or does not contain a person, only then respond:
+Gender: Unknown
+Body Fat %: Unknown`;
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse,
+  res: NextApiResponse
 ) {
   const form = formidable({ keepExtensions: true });
 
@@ -58,14 +132,14 @@ export default async function handler(
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
-          {
-            role: "system",
-            content: systemPrompt,
-          },
+          { role: "system", content: systemPrompt },
           {
             role: "user",
             content: [
-              { type: "text", text: "Analyze this gym selfie." },
+              {
+                type: "text",
+                text: "Estimate gender and body fat % from this image.",
+              },
               {
                 type: "image_url",
                 image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
@@ -73,12 +147,27 @@ export default async function handler(
             ],
           },
         ],
-        max_tokens: 300,
+        max_tokens: 200,
       });
 
-      const roast =
-        response.choices?.[0]?.message?.content || "No roast generated.";
-      res.status(200).json({ result: roast });
+      const raw = response.choices?.[0]?.message?.content || "";
+
+      const genderMatch = raw.match(/Gender:\s*(\w+)/i);
+      const bfMatch = raw.match(/Body Fat %:\s*(\d+)/i);
+
+      const gender = genderMatch?.[1] || "Unknown";
+      const bf = bfMatch?.[1] ? parseInt(bfMatch[1]) : NaN;
+
+      if (gender === "Unknown" || isNaN(bf)) {
+        return res.status(200).json({
+          result: "Physique Rating: N/A\nRoast: Image unclear or not a person.",
+        });
+      }
+
+      const { rating, roast } = getRoast(bf, gender);
+      return res.status(200).json({
+        result: `Physique Rating: ${rating}/10\nRoast: ${roast}`,
+      });
     } catch (e) {
       console.error("OpenAI Error:", e);
       res.status(500).json({ error: "Something went wrong with OpenAI." });
