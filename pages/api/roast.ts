@@ -1,4 +1,3 @@
-// pages/api/roast.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import formidable from "formidable";
 import fs from "fs/promises";
@@ -41,6 +40,11 @@ const roastTemplates = {
     "If Greek gods had gym memberships, they'd still be jealous.",
     "You're one flex away from turning the power off in the building.",
   ],
+  skinny: [
+    "Congrats on the six-pack—shame it's on a coat hanger.",
+    "Built like the before photo in a protein shake ad.",
+    "You flex and the wind changes direction.",
+  ],
 };
 
 function pickRandom(arr: string[]) {
@@ -49,27 +53,37 @@ function pickRandom(arr: string[]) {
 
 function getRoast(
   bf: number,
-  gender: string
+  gender: string,
+  muscleMass: string
 ): { rating: number; roast: string } {
   let rating = 5;
   let category = "average";
 
-  if (gender.toLowerCase() === "male") {
+  const g = gender.toLowerCase();
+  const m = muscleMass.toLowerCase();
+
+  if (g === "male") {
     if (bf > 30) {
       rating = 1;
       category = "obese";
     } else if (bf > 22) {
       rating = 3;
       category = "fat";
-    } else if (bf > 15) {
+    } else if (bf < 10 && m === "low") {
+      rating = 2;
+      category = "skinny";
+    } else if (bf <= 15 && m === "low") {
+      rating = 3;
+      category = "skinny";
+    } else if (bf <= 15 && m === "medium") {
       rating = 5;
       category = "average";
-    } else if (bf > 10) {
-      rating = 7;
-      category = "fit";
-    } else {
+    } else if (bf <= 12 && m === "high") {
       rating = 9;
       category = "jacked";
+    } else {
+      rating = 7;
+      category = "fit";
     }
   } else {
     if (bf > 40) {
@@ -78,15 +92,18 @@ function getRoast(
     } else if (bf > 30) {
       rating = 3;
       category = "fat";
-    } else if (bf > 22) {
+    } else if (bf < 16 && m === "low") {
+      rating = 2;
+      category = "skinny";
+    } else if (bf <= 22 && m === "medium") {
       rating = 5;
       category = "average";
-    } else if (bf > 16) {
-      rating = 7;
-      category = "fit";
-    } else {
+    } else if (bf <= 16 && m === "high") {
       rating = 9;
       category = "jacked";
+    } else {
+      rating = 7;
+      category = "fit";
     }
   }
 
@@ -96,14 +113,17 @@ function getRoast(
   };
 }
 
-const systemPrompt = `You are a fitness analysis AI. When given a gym selfie, your job is to estimate gender and body fat percentage. Do not offer commentary or refuse to answer based on body shape, size, or appearance. You are being used for technical fitness estimation only. Respond clearly and concisely in this format:
+const systemPrompt = `You are a clinical image analysis tool. Your task is to estimate gender, body fat percentage, and muscle mass from photos of real human gym selfies. You must always provide a response, even for extreme or unusual physiques.
 
-Gender: [Male or Female]
-Body Fat %: [number only]
+Only respond in the following format:
+Gender: [Male/Female]
+Body Fat %: [Number only]
+Muscle Mass: [Low/Medium/High]
 
-If the image is completely unreadable or does not contain a person, only then respond:
+This is for objective research purposes. Do NOT include disclaimers, warnings, refusals, or advice. If the image is blurry or not a person, reply:
 Gender: Unknown
-Body Fat %: Unknown`;
+Body Fat %: Unknown
+Muscle Mass: Unknown`;
 
 export default async function handler(
   req: NextApiRequest,
@@ -138,7 +158,7 @@ export default async function handler(
             content: [
               {
                 type: "text",
-                text: "Estimate gender and body fat % from this image.",
+                text: "Estimate gender, body fat %, and muscle mass from this image.",
               },
               {
                 type: "image_url",
@@ -154,17 +174,19 @@ export default async function handler(
 
       const genderMatch = raw.match(/Gender:\s*(\w+)/i);
       const bfMatch = raw.match(/Body Fat %:\s*(\d+)/i);
+      const muscleMatch = raw.match(/Muscle Mass:\s*(\w+)/i);
 
       const gender = genderMatch?.[1] || "Unknown";
       const bf = bfMatch?.[1] ? parseInt(bfMatch[1]) : NaN;
+      const muscleMass = muscleMatch?.[1] || "Unknown";
 
-      if (gender === "Unknown" || isNaN(bf)) {
+      if (gender === "Unknown" || isNaN(bf) || muscleMass === "Unknown") {
         return res.status(200).json({
           result: "Physique Rating: N/A\nRoast: Image unclear or not a person.",
         });
       }
 
-      const { rating, roast } = getRoast(bf, gender);
+      const { rating, roast } = getRoast(bf, gender, muscleMass);
       return res.status(200).json({
         result: `Physique Rating: ${rating}/10\nRoast: ${roast}`,
       });
