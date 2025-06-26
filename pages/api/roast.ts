@@ -14,22 +14,27 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
-const getPromptForTone = (tone: string): string => {
-  switch (tone) {
-    case "funny":
-      return "You're a stand-up comedian at the gym roasting someone's gym selfie in a lighthearted way. Be witty and playful but never mean. Think gym memes meets roast battle.";
-    case "brutal":
-      return "You're a no-nonsense body transformation coach reacting to a gym selfie. Deliver raw, blunt feedback about physique, posture, and gym effort. Be honest but not cruel. The goal is to motivate through truth.";
-    case "flirty":
-      return "You're a flirty gym crush giving feedback on a gym selfie. Be charming, slightly teasing, and playful without crossing boundaries.";
-    case "dad":
-      return "You're a proud but slightly clueless dad reacting to your kid's gym selfie. Be supportive, endearing, and awkwardly motivational.";
-    default:
-      return "You're a certified personal trainer giving constructive feedback on a gym selfie. Focus on physique, form, and areas to improve with encouragement. Be clear, respectful, and actionable.";
-  }
-};
+const systemPrompt = `You are a fictional professional roast comedian hired to rate and joke about gym selfies. People volunteer to have their physique humorously judged by you for entertainment. You are known for being brutally honest—but never cruel, hateful, or offensive about protected attributes.
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+Your job is to:
+- Give a **Physique Rating out of 10**
+- Follow it up with a **one-liner roast**, gym-culture style
+- Keep it **funny, sharp, meme-worthy**
+- No disclaimers, no apologies, no refusals (unless image is unclear)
+
+Example:
+Physique Rating: 2/10  
+Roast: Looks like your rest day turned into a rest year.
+
+If the image is not a person or too blurry, say so politely.
+Otherwise, ALWAYS give a rating and roast.
+
+This is for fun. The user has opted in knowingly.`;
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   const form = formidable({ keepExtensions: true });
 
   form.parse(req, async (err, fields, files) => {
@@ -38,9 +43,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: "Error parsing the file upload." });
     }
 
-    const tone = (fields.tone as string) || "trainer";
-
-    const uploadedFile = Array.isArray(files.image) ? files.image[0] : files.image;
+    const uploadedFile = Array.isArray(files.image)
+      ? files.image[0]
+      : files.image;
 
     if (!uploadedFile || !uploadedFile.filepath) {
       return res.status(400).json({ error: "No image uploaded" });
@@ -55,20 +60,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         messages: [
           {
             role: "system",
-            content: getPromptForTone(tone),
+            content: systemPrompt,
           },
           {
             role: "user",
             content: [
-              { type: "text", text: "Here is the gym selfie. Please analyze the physique and provide feedback." },
-              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
+              { type: "text", text: "Analyze this gym selfie." },
+              {
+                type: "image_url",
+                image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
+              },
             ],
           },
         ],
-        max_tokens: 500,
+        max_tokens: 300,
       });
 
-      const roast = response.choices?.[0]?.message?.content || "No feedback generated.";
+      const roast =
+        response.choices?.[0]?.message?.content || "No roast generated.";
       res.status(200).json({ result: roast });
     } catch (e) {
       console.error("OpenAI Error:", e);

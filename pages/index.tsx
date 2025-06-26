@@ -3,7 +3,6 @@ import { useState } from "react";
 export default function Home() {
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [tone, setTone] = useState("trainer");
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -30,7 +29,6 @@ export default function Home() {
 
     const formData = new FormData();
     formData.append("image", file);
-    formData.append("tone", tone);
 
     try {
       const response = await fetch("/api/roast", {
@@ -63,41 +61,60 @@ export default function Home() {
           <input type="file" accept="image/*" onChange={handleImageChange} />
         </div>
 
-        <div className="mb-4">
-          <label className="block mb-2 font-medium">Choose Tone:</label>
-          <select
-            value={tone}
-            onChange={(e) => setTone(e.target.value)}
-            className="border rounded px-2 py-1"
-          >
-            <option value="trainer">Professional Trainer</option>
-            <option value="funny">Funny</option>
-            <option value="brutal">Brutal</option>
-            <option value="flirty">Flirty</option>
-            <option value="dad">Dad</option>
-          </select>
-        </div>
-
         {preview && (
           <div className="mb-4">
-            <img src={preview} alt="Preview" className="rounded-xl max-w-xs mx-auto" />
+            <img
+              src={preview}
+              alt="Preview"
+              className="rounded-xl max-w-xs mx-auto"
+            />
           </div>
         )}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+          className={`w-full py-2 rounded transition text-white ${
+            loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+          }`}
         >
-          {loading ? "Analyzing..." : "Submit"}
+          {loading ? (
+            <div className="flex items-center justify-center gap-2">
+              <svg
+                className="animate-spin h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8z"
+                />
+              </svg>
+              Roasting...
+            </div>
+          ) : (
+            "Submit"
+          )}
         </button>
 
-        {error && <p className="text-red-600 mt-4 text-center">{error}</p>}
+        {error && (
+          <p className="text-red-600 mt-4 text-center font-medium">{error}</p>
+        )}
       </form>
 
-      {result && (
+      {result && !loading && (
         <div className="mt-6 bg-white p-4 rounded shadow-md">
-          <h3 className="font-semibold mb-2">AI Response:</h3>
+          <h3 className="font-semibold mb-2">Your Rating & Roast:</h3>
           <pre className="whitespace-pre-wrap">{result}</pre>
         </div>
       )}
