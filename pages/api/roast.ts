@@ -35,7 +35,7 @@ const roastTemplates = {
     "Your abs are like Bigfoot—rumored but never seen.",
     "Even your shadow looks out of breath.",
     "Built like you swallowed someone who lifts.",
-    "You’re on bulk, cut, AND maintenance—all at once.",
+    "You’re on bulk, cut, AND maintenance—all at once."
   ],
   fat: [
     "You look like you lift… sandwiches.",
@@ -57,7 +57,7 @@ const roastTemplates = {
     "Your “cutting phase” has been buffering since 2018.",
     "Meal prep? Bro, you prep for buffets.",
     "You ain’t got love handles, you got grab bars.",
-    "Built like your cheat day hired a lawyer.",
+    "Built like your cheat day hired a lawyer."
   ],
   average: [
     "Gym twice a week and thinks he’s the main character.",
@@ -79,7 +79,7 @@ const roastTemplates = {
     "You look like you Google “how to get shredded” daily and do nothing.",
     "You ever even *touched* a barbell?",
     "You’re benching hopes and dreams.",
-    "This physique is brought to you by “good enough.”",
+    "This physique is brought to you by “good enough.”"
   ],
   fit: [
     "Ok bro, we get it—you discovered protein.",
@@ -101,7 +101,7 @@ const roastTemplates = {
     "Your playlists have more testosterone than your lifts.",
     "Built like you give unsolicited gym advice.",
     "Abs visible, but still no riz.",
-    "You track macros like the FBI tracks phones.",
+    "You track macros like the FBI tracks phones."
   ],
   jacked: [
     "Bro's body fat is lower than his IQ.",
@@ -123,7 +123,7 @@ const roastTemplates = {
     "Built like your bones lift too.",
     "You sneeze and PR.",
     "You don’t sweat—you bleed pre-workout.",
-    "You don’t bulk or cut. You *dominate.*",
+    "You don’t bulk or cut. You *dominate.*"
   ],
   skinny: [
     "Congrats on the six-pack; shame it's on a coat hanger.",
@@ -145,23 +145,10 @@ const roastTemplates = {
     "Calisthenics looked at you and said “nah.”",
     "The barbell asked “you sure about this?”",
     "You got a six-pack, but it’s all ribs.",
-    "You’re one breeze away from the ER.",
-  ],
-  disaster: [
-    "You look like gym equipment would sue for emotional damage.",
-    "Built like the floor is your best friend.",
-    "Your whole existence is a rest day.",
-    "If failure had a physique, it’d be yours.",
-    "Even Planet Fitness has standards.",
-  ],
-  god: [
-    "You don’t need a gym, the gym needs you.",
-    "This man’s body is on creatine, discipline, and divine intervention.",
-    "Michelangelo would've scrapped David and started over if he saw you.",
-    "You're so shredded I thought this was CGI.",
-    "Even your shadow has abs.",
-  ],
+    "You’re one breeze away from the ER."
+  ]
 };
+
 
 function pickRandom(arr: string[]) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -170,7 +157,7 @@ function pickRandom(arr: string[]) {
 function getRoast(
   bf: number,
   gender: string,
-  muscleMass: string,
+  muscleMass: string
 ): { rating: number; roast: string } {
   let rating = 5;
   let category = "average";
@@ -194,9 +181,6 @@ function getRoast(
     } else if (bf <= 15 && m === "medium") {
       rating = 5;
       category = "average";
-    } else if (bf <= 7 && m === "high") {
-      rating = 10;
-      category = "god";
     } else if (bf <= 12 && m === "high") {
       rating = 9;
       category = "jacked";
@@ -226,20 +210,6 @@ function getRoast(
     }
   }
 
-  if (rating === 1) {
-    return {
-      rating,
-      roast: pickRandom(roastTemplates["disaster"]),
-    };
-  }
-
-  if (rating === 10) {
-    return {
-      rating,
-      roast: pickRandom(roastTemplates["god"]),
-    };
-  }
-
   return {
     rating,
     roast: pickRandom(roastTemplates[category]),
@@ -260,7 +230,7 @@ Muscle Mass: Unknown`;
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse,
+  res: NextApiResponse
 ) {
   const form = formidable({ keepExtensions: true });
 
