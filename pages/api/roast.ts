@@ -149,7 +149,6 @@ const roastTemplates = {
   ]
 };
 
-
 function pickRandom(arr: string[]) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -166,47 +165,67 @@ function getRoast(
   const m = muscleMass.toLowerCase();
 
   if (g === "male") {
-    if (bf > 30) {
+    if (bf >= 35) {
       rating = 1;
       category = "obese";
-    } else if (bf > 22) {
+    } else if (bf >= 30) {
+      rating = 2;
+      category = "obese";
+    } else if (bf >= 25) {
       rating = 3;
       category = "fat";
-    } else if (bf < 10 && m === "low") {
-      rating = 2;
-      category = "skinny";
-    } else if (bf <= 15 && m === "low") {
-      rating = 3;
-      category = "skinny";
-    } else if (bf <= 15 && m === "medium") {
-      rating = 5;
+    } else if (bf >= 20) {
+      rating = 4;
+      category = "fat";
+    } else if (bf >= 16) {
+      rating = m === "low" ? 4 : 5;
       category = "average";
-    } else if (bf <= 12 && m === "high") {
-      rating = 9;
-      category = "jacked";
+    } else if (bf >= 13) {
+      if (m === "low") {
+        rating = 4;
+        category = "skinny";
+      } else if (m === "medium") {
+        rating = 6;
+        category = "fit";
+      } else {
+        rating = 8;
+        category = "fit";
+      }
+    } else if (bf >= 10) {
+      rating = m === "high" ? 9 : 7;
+      category = m === "high" ? "jacked" : "fit";
     } else {
-      rating = 7;
-      category = "fit";
+      rating = m === "high" ? 10 : 6;
+      category = m === "high" ? "jacked" : "skinny";
     }
   } else {
-    if (bf > 40) {
+    if (bf >= 36) {
       rating = 1;
       category = "obese";
-    } else if (bf > 30) {
+    } else if (bf >= 32) {
+      rating = 2;
+      category = "obese";
+    } else if (bf >= 26) {
       rating = 3;
       category = "fat";
-    } else if (bf < 16 && m === "low") {
-      rating = 2;
-      category = "skinny";
-    } else if (bf <= 22 && m === "medium") {
-      rating = 5;
+    } else if (bf >= 22) {
+      rating = 4;
+      category = "fat";
+    } else if (bf >= 20) {
+      rating = m === "low" ? 4 : 5;
       category = "average";
-    } else if (bf <= 16 && m === "high") {
-      rating = 9;
-      category = "jacked";
-    } else {
-      rating = 7;
+    } else if (bf >= 18) {
+      rating = m === "medium" ? 6 : 5;
       category = "fit";
+    } else if (bf >= 15) {
+      rating = m === "high" ? 8 : 6;
+      category = m === "high" ? "fit" : "average";
+    } else if (bf >= 12) {
+      rating = m === "high" ? 9 : 7;
+      category = m === "high" ? "jacked" : "fit";
+    } else {
+      rating = m === "high" ? 10 : 6;
+      category = m === "high" ? "jacked" : "skinny";
     }
   }
 
